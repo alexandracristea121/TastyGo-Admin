@@ -6,6 +6,7 @@ import java.io.Serializable
 
 class OrderDetails() : Serializable {
 
+    var adminUserId: String? = null
     var userUid: String? = null
     var userName: String? = null
     var foodNames: MutableList<String>? = null

@@ -2,16 +2,17 @@ package com.example.admin_food_app
 
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.admin_food_app.databinding.ActivityAddItemBinding
 import com.example.admin_food_app.model.AllMenu
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
@@ -22,47 +23,52 @@ class AddItemActivity : AppCompatActivity() {
     private lateinit var foodPrice: String
     private lateinit var foodDescription: String
     private lateinit var foodIngredient: String
-    private var foodImage: Uri?=null
+    private var foodImage: Uri? = null
+    private lateinit var selectedRestaurantId: String
+    private lateinit var selectedCategory: String
 
-    //Firebase
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
 
-    private val binding : ActivityAddItemBinding by lazy{
+    private val binding: ActivityAddItemBinding by lazy {
         ActivityAddItemBinding.inflate(layoutInflater)
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(binding.root)
+        window.statusBarColor = ContextCompat.getColor(this, android.R.color.white)
 
-        //initialize
-        auth=FirebaseAuth.getInstance()
-        database=FirebaseDatabase.getInstance()
+        auth = FirebaseAuth.getInstance()
+        database = FirebaseDatabase.getInstance()
+
+        fetchRestaurantData()
+
+        setupCategorySpinner()
 
         binding.AddItemButton.setOnClickListener {
-            //get data from filed
-            foodName=binding.foodName.text.toString().trim()
-            foodPrice=binding.foodPrice.text.toString().trim()
-            foodDescription=binding.description.text.toString().trim()
-            foodIngredient=binding.ingredient.text.toString().trim()
+            foodName = binding.foodName.text.toString().trim()
+            foodPrice = binding.foodPrice.text.toString().trim()
+            foodDescription = binding.description.text.toString().trim()
+            foodIngredient = binding.ingredient.text.toString().trim()
 
-            if(!(foodName.isBlank() || foodPrice.isBlank() || foodDescription.isBlank() || foodIngredient.isBlank())){
+            if (foodName.isNotBlank() && foodPrice.isNotBlank() && foodDescription.isNotBlank() && foodIngredient.isNotBlank()) {
                 uploadData()
-                Toast.makeText(this, "Item Add Successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Item Added Successfully", Toast.LENGTH_SHORT).show()
                 finish()
-            }else{
-                Toast.makeText(this, "Fill all the details", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Please fill all the details", Toast.LENGTH_SHORT).show()
             }
         }
+
         binding.selectImage.setOnClickListener {
             pickImage.launch("image/*")
         }
 
-
         binding.backButton.setOnClickListener {
             finish()
         }
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -71,52 +77,119 @@ class AddItemActivity : AppCompatActivity() {
     }
 
     private fun uploadData() {
-          //get a reference to the "menu" node is the database
-        val menuRef= database.getReference("menu")
-        //generate a unique key for the new menu item
-        val newItemKey =menuRef.push().key
+        val restaurantRef = database.getReference("Restaurants").child(selectedRestaurantId).child("menu")
+        val newItemKey = restaurantRef.push().key // genereaza un id unic pentru un nou item
 
-        if(foodImage != null){
+        if (foodImage != null) {
             val storageRef = FirebaseStorage.getInstance().reference
             val imageRef = storageRef.child("menu_images/${newItemKey}.jpg")
             val uploadTask = imageRef.putFile(foodImage!!)
 
             uploadTask.addOnSuccessListener {
-                imageRef.downloadUrl.addOnSuccessListener {
-                    downloadUrl->
-                    //create a new menu item
+                imageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
                     val newItem = AllMenu(
                         newItemKey,
                         foodName = foodName,
                         foodPrice = foodPrice,
                         foodDescription = foodDescription,
                         foodIngredient = foodIngredient,
-                        foodImage = downloadUrl.toString()
+                        foodImage = downloadUrl.toString(),
+                        restaurantName = selectedRestaurantId,
+                        category = selectedCategory
                     )
-                    newItemKey?.let {
-                        key ->
-                        menuRef.child(key).setValue(newItem).addOnSuccessListener {
-                            Toast.makeText(this, "data uploaded successfully", Toast.LENGTH_SHORT).show()
+
+                    // se adauga ceva nou in meniu
+                    newItemKey?.let { key ->
+                        restaurantRef.child(key).setValue(newItem).addOnSuccessListener {
+                            Toast.makeText(this, "Data uploaded successfully", Toast.LENGTH_SHORT).show()
                         }
-                            .addOnFailureListener{
-                                Toast.makeText(this, "data uploaded failed", Toast.LENGTH_SHORT).show()
+                            .addOnFailureListener {
+                                Toast.makeText(this, "Data upload failed", Toast.LENGTH_SHORT).show()
                             }
                     }
                 }
-            }.addOnFailureListener{
+            }.addOnFailureListener {
                 Toast.makeText(this, "Image Upload Failed", Toast.LENGTH_SHORT).show()
             }
-
-        }else{
-            Toast.makeText(this, "Image Upload Failed", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Please select an image", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()){uri->
-        if(uri!=null)
-        {
+    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
             binding.selectedImage.setImageURI(uri)
             foodImage = uri
+        }
+    }
+
+    private fun fetchRestaurantData() {
+        val restaurantRef = database.getReference("Restaurants")
+
+        // id ul user ului conectat
+        val currentUserId = auth.currentUser?.uid ?: ""
+
+        restaurantRef.get().addOnSuccessListener { snapshot ->
+            val restaurantList = mutableListOf<String>()
+            val restaurantIds = mutableListOf<String>()
+
+            for (restaurantSnapshot in snapshot.children) {
+                val restaurantName = restaurantSnapshot.child("name").getValue(String::class.java)
+                val restaurantId = restaurantSnapshot.key // id restaurant
+                val adminUserId = restaurantSnapshot.child("adminUserId").getValue(String::class.java)
+
+                if (restaurantName != null && restaurantId != null && adminUserId != null && adminUserId == currentUserId) {
+                    restaurantList.add(restaurantName)
+                    restaurantIds.add(restaurantId)
+                }
+            }
+
+            if (restaurantList.isEmpty()) {
+                Toast.makeText(this, "No restaurants found for this user.", Toast.LENGTH_SHORT).show()
+                return@addOnSuccessListener
+            }
+
+            //spinner restaurant
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, restaurantList)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.restaurantSpinner.adapter = adapter
+
+            // selectie restaurant
+            binding.restaurantSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parentView: AdapterView<*>, selectedItemView: View?, position: Int, id: Long) {
+                    selectedRestaurantId = restaurantIds[position] // Set selected restaurant ID
+                }
+
+                override fun onNothingSelected(parentView: AdapterView<*>) {
+
+                }
+            }
+        }.addOnFailureListener {
+            Toast.makeText(this, "Failed to load restaurants", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupCategorySpinner() {
+        val categories = listOf(
+            "Pizza", "Pasta", "Burgers", "Sandwiches", "Salads",
+            "Sushi", "Mexican", "Asian", "Desserts", "Drinks",
+            "Soups", "Snacks", "Fast Food", "Breakfast",
+            "Grilled Food", "Vegan", "Vegetarian", "Seafood", "BBQ"
+        )
+
+        //adapter pentru spinner categorii
+        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.categorySpinner.adapter = categoryAdapter
+
+        // selectie categorie
+        binding.categorySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>, selectedItemView: View?, position: Int, id: Long) {
+                selectedCategory = categories[position] // Store selected category
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>) {
+            }
         }
     }
 }

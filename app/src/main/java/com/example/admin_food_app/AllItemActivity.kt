@@ -47,13 +47,10 @@ class AllItemActivity : AppCompatActivity() {
         database=FirebaseDatabase.getInstance()
         val foodRef: DatabaseReference = database.reference.child("menu")
 
-        //fetch data from data base
         foodRef.addListenerForSingleValueEvent(object :ValueEventListener{
 
             override fun onDataChange(snapshot: DataSnapshot){
-                //clear existing data before populaing
-                menuItems.clear()
-                //loop for through each food item
+                menuItems.clear() //se sterg datele existente inainte de populare
                 for(foodSnapshot in snapshot.children){
                     val menuItem=foodSnapshot.getValue(AllMenu::class.java)
                     menuItem?.let {
@@ -79,29 +76,23 @@ class AllItemActivity : AppCompatActivity() {
 
     private fun deleteMenuItems(position: Int) {
         if (position < 0 || position >= menuItems.size) {
-            // Position is out of bounds, return early
             Log.e("DeleteMenuItem", "Invalid position: $position")
             return
         }
 
-        // Proceed with deletion if position is valid
         val menuItemToDelete = menuItems[position]
         val menuItemKey = menuItemToDelete.key
         val foodMenuReference = database.reference.child("menu").child(menuItemKey!!)
 
         foodMenuReference.removeValue().addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // Remove the item from the list
                 menuItems.removeAt(position)
 
-                // Notify the adapter that the item was removed
                 binding.MenuRecyclerView.adapter?.notifyItemRemoved(position)
 
-                // Optionally, you may want to notify that the range of items may have changed
                 binding.MenuRecyclerView.adapter?.notifyItemRangeChanged(position, menuItems.size)
 
             } else {
-                // Handle failure
                 Toast.makeText(this, "Item not deleted", Toast.LENGTH_SHORT).show()
             }
         }
