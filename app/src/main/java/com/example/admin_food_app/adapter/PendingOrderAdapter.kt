@@ -62,7 +62,7 @@ class PendingOrderAdapter(private val context: Context, private val customerName
                     }
                 }
 
-                // verific daca a functiont click
+                // Ensure itemView click works
                 itemView.setOnClickListener {
                     val currentPosition = adapterPosition
                     if (currentPosition != RecyclerView.NO_POSITION) {

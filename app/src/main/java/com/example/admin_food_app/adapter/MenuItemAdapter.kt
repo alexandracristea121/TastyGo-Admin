@@ -65,19 +65,25 @@ class MenuItemAdapter(
             }
         }
         private fun deleteQuantity(position: Int) {
+            // Validate if the position is within bounds
             if (position < 0 || position >= menuList.size) {
                 Log.e("DeleteQuantity", "Invalid position: $position")
                 return
             }
 
             try {
+                // Remove the item from the list
                 menuList.removeAt(position)
 
-                notifyItemRemoved(position)  //trebuie notificat adapterul daca am facut modificare
+                // Notify the adapter that an item was removed
+                notifyItemRemoved(position)
 
+                // Notify the adapter that the range of items has changed
+                // This helps in case the list shrinks and item positions change
                 notifyItemRangeChanged(position, menuList.size)
 
             } catch (e: Exception) {
+                // Catch any potential exceptions during the deletion process
                 Log.e("DeleteQuantity", "Error during deletion", e)
             }
         }

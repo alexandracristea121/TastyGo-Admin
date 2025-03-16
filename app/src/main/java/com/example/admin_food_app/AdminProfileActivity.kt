@@ -73,24 +73,29 @@ class AdminProfileActivity : AppCompatActivity() {
     private fun retrieveUserData() {
         val currentUserUid = auth.currentUser?.uid
         if (currentUserUid != null) {
+            // Reference to the user's data using their UID under the 'user' node
             val userReference = database.reference.child("adminUsers").child(currentUserUid)
 
             userReference.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
+                        // Get the data for each field. If the field is missing, it will return null.
                         val ownerName = snapshot.child("name").getValue(String::class.java)
                         val address = snapshot.child("address").getValue(String::class.java)
                         val email = snapshot.child("email").getValue(String::class.java)
                         val phone = snapshot.child("phone").getValue(String::class.java)
                         val password = snapshot.child("password").getValue(String::class.java)
 
+                        // Set each field if it's not null, otherwise leave it empty or show a default value
+                        // Ensure null data doesn't cause a crash in your app by checking it
                         ownerName?.let { binding.name.setText(it) }
                         address?.let { binding.address.setText(it) }
                         email?.let { binding.email.setText(it) }
                         phone?.let { binding.phone.setText(it) }
                         password?.let { binding.password.setText(it) }
 
-                        if (ownerName == null) binding.name.setText("")
+                        // If any field is missing, you can either show a placeholder or leave it empty.
+                        if (ownerName == null) binding.name.setText("") // Optional: show placeholder
                         if (address == null) binding.address.setText("")
                         if (email == null) binding.email.setText("")
                         if (phone == null) binding.phone.setText("")
@@ -127,12 +132,14 @@ class AdminProfileActivity : AppCompatActivity() {
         val currentUserUid = auth.currentUser?.uid
 
         if (currentUserUid != null) {
+            // Get the user's updated data
             val updateName = binding.name.text.toString()
             val updateEmail = binding.email.text.toString()
             val updatePassword = binding.password.text.toString()
             val updatePhone = binding.phone.text.toString()
             val updateAddress = binding.address.text.toString()
 
+            // Create the updated UserModel object
             val userData = UserModel(
                 name = updateName,
                 email = updateEmail,
@@ -141,6 +148,7 @@ class AdminProfileActivity : AppCompatActivity() {
                 address = updateAddress
             )
 
+            // Save the user data under their unique UID in the database
             val userReference = database.reference.child("adminUsers").child(currentUserUid)
             userReference.setValue(userData)
                 .addOnSuccessListener {

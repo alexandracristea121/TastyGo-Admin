@@ -29,9 +29,11 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(binding.root)
 
+        // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
 
+        // Navigation Buttons
         binding.profile.setOnClickListener {
             val intent = Intent(this, AdminProfileActivity::class.java)
             startActivity(intent)
@@ -58,12 +60,14 @@ class MainActivity : AppCompatActivity() {
             finish()
         }
 
+        // Adjust for system bars
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
+        // Real-time updates for user-specific data
         observePendingOrders()
         observeCompletedOrders()
         observeWholeTimeEarning()
@@ -71,13 +75,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun observePendingOrders() {
         val currentUserId = auth.currentUser?.uid ?: return
-        val pendingOrderReference: DatabaseReference = database.reference.child("OrderDetails")
+        val ordersReference: DatabaseReference = database.reference.child("orders")
 
-        pendingOrderReference.orderByChild("adminUserId").equalTo(currentUserId)
+        ordersReference.orderByChild("adminUserId").equalTo(currentUserId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val pendingOrderItemCount = snapshot.childrenCount.toInt()
-                    binding.pendingOrders.text = pendingOrderItemCount.toString()
+                    var pendingOrderCount = 0
+
+                    for (orderSnapshot in snapshot.children) {
+                        val orderDelivered = orderSnapshot.child("orderDelivered").getValue(Boolean::class.java) ?: false
+
+                        if (!orderDelivered) {  // Count only orders that are NOT delivered
+                            pendingOrderCount++
+                        }
+                    }
+
+                    // Update UI with the pending order count
+                    binding.pendingOrders.text = pendingOrderCount.toString()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -88,13 +102,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeCompletedOrders() {
         val currentUserId = auth.currentUser?.uid ?: return
-        val completedOrderReference: DatabaseReference = database.reference.child("CompletedOrder")
+        val ordersReference: DatabaseReference = database.reference.child("orders")
 
-        completedOrderReference.orderByChild("adminUserId").equalTo(currentUserId)
+        ordersReference.orderByChild("adminUserId").equalTo(currentUserId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val completeOrderItemCount = snapshot.childrenCount.toInt()
-                    binding.completeOrders.text = completeOrderItemCount.toString()
+                    var completedOrderCount = 0
+                    for (orderSnapshot in snapshot.children) {
+                        val orderDelivered = orderSnapshot.child("orderDelivered").getValue(Boolean::class.java) ?: false
+                        if (orderDelivered) {
+                            completedOrderCount++
+                        }
+                    }
+                    binding.completeOrders.text = completedOrderCount.toString()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -105,32 +125,39 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeWholeTimeEarning() {
         val currentUserId = auth.currentUser?.uid ?: return
-        val completedOrderReference: DatabaseReference = database.reference.child("CompletedOrder")
+        val ordersReference: DatabaseReference = database.reference.child("orders")
 
-        completedOrderReference.orderByChild("adminUserId").equalTo(currentUserId)
+        ordersReference.orderByChild("adminUserId").equalTo(currentUserId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val listOfTotalPay = mutableListOf<Int>()
                     for (orderSnapshot in snapshot.children) {
-                        val completeOrder = orderSnapshot.getValue(OrderDetails::class.java)
+                        val orderDelivered = orderSnapshot.child("orderDelivered").getValue(Boolean::class.java) ?: false
 
-                        val foodPrices = completeOrder?.foodPrices
-                        val foodQuantities = completeOrder?.foodQuantities
+                        if (orderDelivered) {  // Only process delivered orders
+                            val completeOrder = orderSnapshot.getValue(OrderDetails::class.java)
 
-                        if (foodPrices != null && foodQuantities != null && foodPrices.size == foodQuantities.size) {
-                            var totalPriceForOrder = 0
-                            for (i in foodPrices.indices) {
-                                val price = foodPrices[i].toIntOrNull() ?: 0
-                                val quantity = foodQuantities[i]
-                                totalPriceForOrder += price * quantity
+                            // Extract food prices and quantities
+                            val foodPrices = completeOrder?.foodPrices
+                            val foodQuantities = completeOrder?.foodQuantities
+
+                            if (foodPrices != null && foodQuantities != null && foodPrices.size == foodQuantities.size) {
+                                var totalPriceForOrder = 0
+                                for (i in foodPrices.indices) {
+                                    val price = foodPrices[i].toIntOrNull() ?: 0
+                                    val quantity = foodQuantities[i]
+                                    totalPriceForOrder += price * quantity
+                                }
+                                listOfTotalPay.add(totalPriceForOrder)
                             }
-                            listOfTotalPay.add(totalPriceForOrder)
                         }
                     }
 
+                    // Sum up all earnings and update the UI
                     val totalEarnings = listOfTotalPay.sum()
                     binding.wholeTimeEarning.text = "$$totalEarnings"
                 }
+
                 override fun onCancelled(error: DatabaseError) {
                     Toast.makeText(this@MainActivity, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
                 }

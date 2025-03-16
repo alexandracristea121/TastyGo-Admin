@@ -28,6 +28,7 @@ class OutForDeliveryActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener {
             finish()
         }
+        //retrieve and display completed order
         retrieveCompleteOrderDetail()
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -38,11 +39,13 @@ class OutForDeliveryActivity : AppCompatActivity() {
     }
 
     private fun retrieveCompleteOrderDetail() {
+        //initialize firebase database
         database=FirebaseDatabase.getInstance()
         val completeOrderReference=database.reference.child("CompletedOrder")
             .orderByChild("currentTime")
         completeOrderReference.addListenerForSingleValueEvent(object: ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
+                //clear the list before populating it with new data
                 listOfCompleteOrderList.clear()
 
                 for(orderSnapshot in snapshot.children){
@@ -51,6 +54,7 @@ class OutForDeliveryActivity : AppCompatActivity() {
                         listOfCompleteOrderList.add(it)
                     }
                 }
+                //reverse the list to display latest order first
                 listOfCompleteOrderList.reverse()
 
                 setDataIntoRecyclerView()
@@ -64,6 +68,7 @@ class OutForDeliveryActivity : AppCompatActivity() {
     }
 
     private fun setDataIntoRecyclerView() {
+        //initialization list to hold customers name and payment status
         val customerName= mutableListOf<String>()
         val moneyStatus= mutableListOf<Boolean>()
 

@@ -113,11 +113,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun saveGoogleUserData(account: GoogleSignInAccount) {
-        val userName = account.displayName ?: "Unknown"
+        val userName = account.displayName ?: "Unknown" // Poți folosi displayName sau altceva
         val email = account.email ?: "Unknown"
         val user =
-            UserModel(userName, null, email, null)
+            UserModel(userName, null, email, null) // Poți adăuga restul câmpurilor dacă ai nevoie
 
+        // Salvăm datele utilizatorului în Firebase
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         userId?.let {
             database.child("adminUsers").child(it).setValue(user).addOnCompleteListener { task ->
@@ -143,12 +144,14 @@ class LoginActivity : AppCompatActivity() {
                             val email = user?.email
 
                             if (email != null) {
+                                // Check if the email exists in the adminUsers table
                                 database.child("adminUsers")
                                     .orderByChild("email")
                                     .equalTo(email)
                                     .addListenerForSingleValueEvent(object : ValueEventListener {
                                         override fun onDataChange(snapshot: DataSnapshot) {
                                             if (snapshot.exists()) {
+                                                // Email exists in adminUsers
                                                 Toast.makeText(
                                                     this@LoginActivity,
                                                     "Welcome, Admin!",
@@ -156,12 +159,13 @@ class LoginActivity : AppCompatActivity() {
                                                 ).show()
                                                 updateUi(user)
                                             } else {
+                                                // Email not found in adminUsers
                                                 Toast.makeText(
                                                     this@LoginActivity,
                                                     "Access Denied: Email not registered as admin.",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
-                                                auth.signOut()
+                                                auth.signOut() // Sign out the user if not registered
                                                 googleSignInClient.signOut()
                                             }
                                         }
@@ -190,10 +194,11 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
+    //check if user is already logged in
     override fun onStart() {
         super.onStart()
         val currentUser = auth.currentUser
-        if (currentUser != null) { //daca user este deja log-in
+        if (currentUser != null) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
 
