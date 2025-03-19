@@ -91,6 +91,7 @@
                 android:text="Pending Order"
                 android:textColor="@color/textColor"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/imageView2" />
 
@@ -128,6 +129,7 @@
                 android:text="Completed order"
                 android:textAlignment="center"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toStartOf="@+id/textView11"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toEndOf="@+id/pendingOrderTextView"
@@ -168,6 +170,7 @@
                 android:text="Earnings"
                 android:textAlignment="center"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/imageView4" />
 
