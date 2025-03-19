@@ -16,6 +16,7 @@
         android:text="Admin Dashboard"
         android:textColor="@color/black"
         android:textSize="40sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/cardView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -222,6 +223,7 @@
                 android:layout_marginTop="28dp"
                 android:text="Profile"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/imageView5"
                 app:layout_constraintStart_toStartOf="@+id/imageView5"
                 app:layout_constraintTop_toBottomOf="@+id/imageView5" />
@@ -261,6 +263,7 @@
                 android:layout_marginTop="28dp"
                 android:text="Create New Admin"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/imageView88"
                 app:layout_constraintStart_toStartOf="@+id/imageView88"
                 app:layout_constraintTop_toBottomOf="@+id/imageView88" />
@@ -302,6 +305,7 @@
                 android:layout_marginTop="28dp"
                 android:text="Order Management"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/imageView99"
                 app:layout_constraintStart_toStartOf="@+id/imageView99"
                 app:layout_constraintTop_toBottomOf="@+id/imageView99" />
@@ -326,26 +330,27 @@
             android:layout_height="match_parent"
             android:background="@drawable/cardgreen">
 
-            <ImageView
-                android:id="@+id/imageView77"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/ic_restaurant_green"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
             <TextView
                 android:id="@+id/textView77"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
+                android:layout_marginTop="5dp"
                 android:text="My Restaurants"
                 android:textColor="@color/textColor"
-                app:layout_constraintEnd_toEndOf="@+id/imageView77"
-                app:layout_constraintStart_toStartOf="@+id/imageView77"
-                app:layout_constraintTop_toBottomOf="@+id/imageView77" />
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="@+id/imageView7"
+                app:layout_constraintStart_toStartOf="@+id/imageView7"
+                app:layout_constraintTop_toBottomOf="@+id/imageView7" />
+
+            <ImageView
+                android:id="@+id/imageView7"
+                android:layout_width="72dp"
+                android:layout_height="55dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_restaurant_green" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.cardview.widget.CardView>
@@ -383,6 +388,7 @@
                 android:layout_marginTop="28dp"
                 android:text="Logout"
                 android:textColor="@color/textColor"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/imageView10"
                 app:layout_constraintStart_toStartOf="@+id/imageView10"
                 app:layout_constraintTop_toBottomOf="@+id/imageView10" />

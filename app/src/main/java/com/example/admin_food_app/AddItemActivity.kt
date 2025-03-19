@@ -136,6 +136,7 @@ class AddItemActivity : AppCompatActivity() {
         }
     }
 
+
     // Function to fetch restaurant data and populate the spinner
     private fun fetchRestaurantData() {
         val restaurantRef = database.getReference("Restaurants")
